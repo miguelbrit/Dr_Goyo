@@ -12,8 +12,9 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
       ],
+      // Allow Vite to pick up Supabase variables without the VITE_ prefix
+      envPrefix: ['VITE_', 'SUPABASE_'],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
       resolve: {
