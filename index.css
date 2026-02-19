@@ -4,6 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-bg text-gray-text font-sans antialiased;
+    @apply bg-gray-bg text-gray-text font-sans antialiased transition-colors duration-300;
+    @apply dark:bg-[#0F172A] dark:text-gray-100;
   }
 }

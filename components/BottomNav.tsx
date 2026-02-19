@@ -16,7 +16,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe z-50">
+    <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-[#1E293B] border-t border-gray-100 dark:border-gray-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe z-50 transition-colors">
       <div className="flex justify-around items-end h-16 max-w-md mx-auto relative px-2">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -34,7 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
                 `}>
                   <item.icon size={28} />
                 </div>
-                <span className="text-xs font-semibold text-gray-600 mt-1">{item.label}</span>
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-1">{item.label}</span>
               </button>
             );
           }
@@ -44,7 +44,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={`flex flex-col items-center justify-center w-16 pb-2 transition-colors ${
-                isActive ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+                isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
               }`}
             >
               <item.icon size={24} className={isActive ? 'stroke-[2.5px]' : 'stroke-2'} />
