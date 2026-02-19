@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, ArrowLeft, MoreVertical, Phone } from 'lucide-react';
 import { ChatMessage, Message } from '../components/ChatMessage';
 import { Avatar } from '../components/Avatar';
+import { getGeminiResponse } from '../services/gemini';
 
 interface ChatScreenProps {
   initialMessage?: string;
@@ -18,8 +19,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ initialMessage, onBack, 
   // Initial greeting or handling initial message
   useEffect(() => {
     if (initialMessage) {
-      addMessage(initialMessage, 'user');
-      simulateResponse(initialMessage);
+      handleInitialMessage(initialMessage);
     } else {
       // Default greeting
       setMessages([
@@ -33,6 +33,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ initialMessage, onBack, 
       ]);
     }
   }, []);
+
+  const handleInitialMessage = async (text: string) => {
+    addMessage(text, 'user');
+    await callGemini(text);
+  };
 
   // Auto-scroll
   useEffect(() => {
@@ -51,105 +56,51 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ initialMessage, onBack, 
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
-    addMessage(inputText, 'user');
-    simulateResponse(inputText);
+    const text = inputText;
     setInputText('');
+    addMessage(text, 'user');
+    await callGemini(text);
   };
 
-  // --- AI LOGIC START ---
-  const analyzeSymptoms = (text: string): { specialty: string; reasoning: string } | null => {
-    const lowerText = text.toLowerCase();
-    
-    // Logic for symptom/pathology detection mapped to specialty
-    if (lowerText.includes('corazon') || lowerText.includes('pecho') || lowerText.includes('palpitaciones') || lowerText.includes('presion') || lowerText.includes('hipertension') || lowerText.includes('cardiaco')) {
-      return { specialty: 'Cardiólogo', reasoning: 'Tus síntomas podrían estar relacionados con el sistema cardiovascular.' };
-    }
-    
-    if (lowerText.includes('cabeza') || lowerText.includes('migraña') || lowerText.includes('mareo') || lowerText.includes('memoria') || lowerText.includes('convulsion')) {
-      return { specialty: 'Neurólogo', reasoning: 'Lo que describes parece estar relacionado con el sistema neurológico.' };
-    }
-    
-    if (lowerText.includes('dieta') || lowerText.includes('peso') || lowerText.includes('gordo') || lowerText.includes('flaco') || lowerText.includes('comer') || lowerText.includes('alimento')) {
-      return { specialty: 'Nutricionista', reasoning: 'Para temas de alimentación y peso, un nutricionista es el especialista indicado.' };
-    }
-
-    if (lowerText.includes('sangre') || lowerText.includes('moretones') || lowerText.includes('anemia') || lowerText.includes('coagulacion') || lowerText.includes('sangrado')) {
-      return { specialty: 'Hematólogo', reasoning: 'Tus síntomas sugieren una posible afección sanguínea.' };
-    }
-
-    if (lowerText.includes('embarazo') || lowerText.includes('menstruacion') || lowerText.includes('regla') || lowerText.includes('ovarios') || lowerText.includes('mujer') || lowerText.includes('intimo')) {
-      return { specialty: 'Ginecólogo', reasoning: 'Para salud femenina y reproductiva, te recomiendo consultar a un ginecólogo.' };
-    }
-
-    if (lowerText.includes('diabetes') || lowerText.includes('hormonas') || lowerText.includes('tiroides') || lowerText.includes('sed') || lowerText.includes('cansancio') || lowerText.includes('azucar')) {
-      return { specialty: 'Endocrinólogo', reasoning: 'Estos síntomas suelen estar asociados al sistema endocrino y hormonal.' };
-    }
-
-    if (lowerText.includes('niño') || lowerText.includes('bebe') || lowerText.includes('hijo') || lowerText.includes('crecimiento')) {
-      return { specialty: 'Pediatra', reasoning: 'Para la atención de niños y adolescentes, el especialista adecuado es un pediatra.' };
-    }
-
-    if (lowerText.includes('tos') || lowerText.includes('respirar') || lowerText.includes('pulmones') || lowerText.includes('aire') || lowerText.includes('asma') || lowerText.includes('gripe')) {
-      return { specialty: 'Neumonólogo', reasoning: 'Tus síntomas respiratorios deberían ser evaluados por un neumonólogo.' };
-    }
-
-    // Default fallback (General Practitioner context, but maps to list generally)
-    if (lowerText.includes('medico') || lowerText.includes('doctor') || lowerText.includes('cita')) {
-        return { specialty: '', reasoning: 'Puedo mostrarte nuestra lista general de especialistas.' };
-    }
-
-    return null;
-  };
-
-  const simulateResponse = (userText: string) => {
+  const callGemini = async (userText: string) => {
     setIsTyping(true);
     
-    setTimeout(() => {
-      setIsTyping(false);
-      
-      const analysis = analyzeSymptoms(userText);
+    // Prepare history for Gemini
+    const history = messages.map(msg => ({
+      role: msg.sender === 'user' ? "user" as const : "model" as const,
+      parts: [{ text: msg.text }]
+    }));
 
-      if (analysis) {
-        // Known specialty or general request
-        if (analysis.specialty) {
-           addMessage(
-             `Entiendo. ${analysis.reasoning}\n\nHe filtrado nuestra lista de médicos para mostrarte solo los especialistas en **${analysis.specialty}**.`,
-             'ai',
-             'action',
-             {
-               actionLabel: `Ver ${analysis.specialty}s recomendados`,
-               onAction: () => onViewDoctorList(analysis.specialty)
-             }
-           );
-        } else {
-           // General request
-           addMessage(
-             'Claro, puedo ayudarte a encontrar el especialista adecuado. Aquí tienes el acceso a nuestro directorio médico.',
-             'ai',
-             'action',
-             {
-               actionLabel: 'Ver todos los médicos',
-               onAction: () => onViewDoctorList()
-             }
-           );
+    const response = await getGeminiResponse(userText, history);
+    
+    setIsTyping(false);
+    
+    // Parse specialty tag if present
+    let finalMessage = response;
+    let detectedSpecialty = "";
+    
+    const specialtyMatch = response.match(/\[ESPECIALIDAD:(.*?)\]/);
+    if (specialtyMatch) {
+      detectedSpecialty = specialtyMatch[1].trim();
+      finalMessage = response.replace(/\[ESPECIALIDAD:.*?\]/g, "").trim();
+    }
+
+    if (detectedSpecialty) {
+      addMessage(
+        finalMessage,
+        'ai',
+        'action',
+        {
+          actionLabel: `Ver ${detectedSpecialty}s recomendados`,
+          onAction: () => onViewDoctorList(detectedSpecialty)
         }
-      } else {
-        // Unknown or vague
-        addMessage(
-          'Entiendo. Para poder orientarte mejor hacia la especialidad correcta, ¿podrías darme más detalles sobre tus síntomas?\n\nPor ejemplo: "tengo dolor de cabeza constante" o "necesito una dieta".',
-          'ai',
-          'action',
-          {
-            actionLabel: 'Ver lista general',
-            onAction: () => onViewDoctorList()
-          }
-        );
-      }
-    }, 1500);
+      );
+    } else {
+      addMessage(finalMessage, 'ai');
+    }
   };
-  // --- AI LOGIC END ---
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
