@@ -81,21 +81,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name);
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        if (currentUser) {
+          await fetchProfile(currentUser.id, currentUser.email, currentUser.user_metadata?.full_name);
+        }
+      } catch (err) {
+        console.error('Error in initAuth:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // If we are already loading from initAuth, avoid duplicate work
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
       if (currentUser) {
+        setLoading(true); // Ensure loading is true while we fetch
         await fetchProfile(currentUser.id, currentUser.email, currentUser.user_metadata?.full_name);
       } else {
         setProfile(null);
@@ -103,7 +114,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setLoading(false);
     });
-
 
     return () => subscription.unsubscribe();
   }, []);
