@@ -90,9 +90,9 @@ const UIKitShowcase = () => {
 
 const App: React.FC = () => {
   const navigate = useNavigate();
-  const { userRole, setUserRole, adminSession, setAdminSession, logout } = useAuth();
+  const { user, profile, loading, adminSession, setAdminSession, signOut } = useAuth();
 
-  const [selectedRole, setSelectedRole] = useState<'patient' | 'doctor' | 'pharmacy' | 'lab' | 'admin'>('patient');
+  const [selectedRole, setSelectedRole] = useState<'paciente' | 'medico' | 'farmacia' | 'laboratorio' | 'admin'>('paciente');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
@@ -111,36 +111,32 @@ const App: React.FC = () => {
   const [doctorSearchQuery, setDoctorSearchQuery] = useState('');
   const [doctorSpecialtyFilter, setDoctorSpecialtyFilter] = useState('');
 
+  // Effect to handle automatic redirect when profile changes
+  React.useEffect(() => {
+    if (!loading && user && profile) {
+      if (profile.role === 'medico') navigate('/dashboard/medico');
+      else if (profile.role === 'farmacia') navigate('/dashboard/farmacia');
+      else if (profile.role === 'laboratorio') navigate('/dashboard/laboratorio');
+      else if (profile.role === 'paciente') navigate('/dashboard/paciente');
+    }
+  }, [user, profile, loading]);
+
   // --- Auth Handlers ---
   const handleLoginSuccess = () => {
-     setUserRole('patient');
-     navigate('/home');
+      // Logic handled by the useEffect above through context update
   };
 
   const handleRegisterSuccess = (role: string) => {
-    if (role === 'doctor') {
-      setUserRole('doctor');
-      navigate('/doctor/dashboard');
-    } else if (role === 'pharmacy') {
-      setUserRole('pharmacy');
-      navigate('/pharmacy/dashboard');
-    } else if (role === 'lab') {
-      setUserRole('lab');
-      navigate('/lab/dashboard');
-    } else if (role === 'patient') {
-      setUserRole('patient');
-      navigate('/home');
-    } else {
-      navigate('/review'); 
-    }
+    // Logic handled by the useEffect above through context update
   };
 
-  const handleAppLogout = () => {
-    logout();
+  const handleAppLogout = async () => {
+    await signOut();
     navigate('/welcome');
     setToastMessage("Has cerrado sesión correctamente");
     setShowToast(true);
   };
+
 
   // --- Internal Admin Auth ---
   const handleAdminLoginSuccess = () => {
@@ -222,7 +218,7 @@ const App: React.FC = () => {
 
   // Centralized navigation handler for bottom bar
   const handleBottomNav = (tab: string) => {
-    if (tab === 'home') navigate('/home');
+    if (tab === 'home') navigate('/dashboard/paciente');
     else if (tab === 'doctors') handleNavigateToDoctors();
     else if (tab === 'chat') handleNavigateToChat();
     else if (tab === 'pharmacy') handleNavigateToPharmacies();
@@ -256,8 +252,8 @@ const App: React.FC = () => {
         <Route path="/review" element={<AccountReviewScreen onGoHome={() => navigate('/welcome')} />} />
         
         {/* Patient Routes */}
-        <Route path="/home" element={
-          <ProtectedRoute allowedRoles={['patient']}>
+        <Route path="/dashboard/paciente" element={
+          <ProtectedRoute allowedRoles={['paciente']}>
             <PatientHomeScreen 
               onLogout={handleAppLogout} 
               onNavigateToChat={handleNavigateToChat} 
@@ -270,18 +266,18 @@ const App: React.FC = () => {
         } />
 
         {/* Dashboards */}
-        <Route path="/doctor/dashboard" element={
-          <ProtectedRoute allowedRoles={['doctor']}>
+        <Route path="/dashboard/medico" element={
+          <ProtectedRoute allowedRoles={['medico']}>
             <DoctorDashboardScreen onLogout={handleAppLogout} />
           </ProtectedRoute>
         } />
-        <Route path="/pharmacy/dashboard" element={
-          <ProtectedRoute allowedRoles={['pharmacy']}>
+        <Route path="/dashboard/farmacia" element={
+          <ProtectedRoute allowedRoles={['farmacia']}>
             <PharmacyDashboardScreen onLogout={handleAppLogout} />
           </ProtectedRoute>
         } />
-        <Route path="/lab/dashboard" element={
-          <ProtectedRoute allowedRoles={['lab']}>
+        <Route path="/dashboard/laboratorio" element={
+          <ProtectedRoute allowedRoles={['laboratorio']}>
             <LabDashboardScreen onLogout={handleAppLogout} />
           </ProtectedRoute>
         } />

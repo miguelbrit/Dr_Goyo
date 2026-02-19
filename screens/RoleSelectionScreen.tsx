@@ -4,63 +4,65 @@ import { User, Stethoscope, Store, FlaskConical, ChevronRight } from 'lucide-rea
 
 interface RoleSelectionScreenProps {
   onBack: () => void;
-  onSelectRole: (role: 'patient' | 'doctor' | 'pharmacy' | 'lab') => void;
+  onSelectRole: (role: 'paciente' | 'medico' | 'farmacia' | 'laboratorio') => void;
 }
 
 export const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({ onBack, onSelectRole }) => {
   
   const roles = [
     {
-      id: 'patient',
+      id: 'paciente',
       title: 'Soy Paciente',
-      desc: 'Busco atención médica',
+      desc: 'Busco atención médica y control de salud',
       icon: User,
-      color: 'bg-blue-100 text-blue-600'
+      color: 'bg-blue-50 text-blue-500'
     },
     {
-      id: 'doctor',
+      id: 'medico',
       title: 'Soy Médico',
-      desc: 'Quiero ofrecer consultas',
+      desc: 'Quiero ofrecer consultas y gestionar pacientes',
       icon: Stethoscope,
-      color: 'bg-teal-100 text-teal-600'
+      color: 'bg-primary/10 text-primary'
     },
     {
-      id: 'pharmacy',
+      id: 'farmacia',
       title: 'Soy Farmacia',
-      desc: 'Venta de medicamentos',
+      desc: 'Venta y gestión de stock de medicamentos',
       icon: Store,
-      color: 'bg-purple-100 text-purple-600'
+      color: 'bg-purple-50 text-purple-500'
     },
     {
-      id: 'lab',
+      id: 'laboratorio',
       title: 'Soy Laboratorio',
-      desc: 'Ofrezco análisis clínicos',
+      desc: 'Ofrezco análisis y resultados clínicos',
       icon: FlaskConical,
-      color: 'bg-orange-100 text-orange-600'
+      color: 'bg-orange-50 text-orange-500'
     }
   ] as const;
 
   return (
     <AuthLayout 
-      title="¿Cómo usarás Dr. Goyo?" 
-      subtitle="Selecciona el tipo de perfil que deseas crear."
+      title="¿Qué tipo de usuario eres?" 
+      subtitle="Personalizaremos tu experiencia según tu perfil."
       onBack={onBack}
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 py-2">
         {roles.map((role) => (
           <button
             key={role.id}
-            onClick={() => onSelectRole(role.id)}
-            className="flex items-center p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/30 transition-all text-left group"
+            onClick={() => onSelectRole(role.id as any)}
+            className="flex items-center p-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm hover:shadow-xl hover:shadow-gray-200/50 hover:border-primary/50 transition-all text-left group relative overflow-hidden active:scale-[0.98]"
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${role.color} mr-4`}>
-              <role.icon size={24} />
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${role.color} mr-5 transition-transform group-hover:scale-110 duration-500`}>
+              <role.icon size={28} />
             </div>
             <div className="flex-1">
-              <h3 className="font-heading font-semibold text-gray-900">{role.title}</h3>
-              <p className="text-sm text-gray-500">{role.desc}</p>
+              <h3 className="font-heading font-bold text-secondary group-hover:text-primary transition-colors">{role.title}</h3>
+              <p className="text-xs text-gray-500 font-medium leading-relaxed">{role.desc}</p>
             </div>
-            <ChevronRight size={20} className="text-gray-300 group-hover:text-primary transition-colors" />
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+              <ChevronRight size={18} className="text-gray-400 group-hover:text-primary transition-colors" />
+            </div>
           </button>
         ))}
       </div>

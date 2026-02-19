@@ -5,7 +5,7 @@ import { Button } from '../components/Button';
 import { Mail, Lock, User, Phone, Briefcase, FileText, MapPin, Building, Apple, Facebook } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
-type UserRole = 'patient' | 'doctor' | 'pharmacy' | 'lab' | 'admin';
+type UserRole = 'paciente' | 'medico' | 'farmacia' | 'laboratorio' | 'admin';
 
 interface RegisterScreenProps {
   role: UserRole;
@@ -39,9 +39,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
 
   const getRoleConfig = () => {
     switch (role) {
-      case 'doctor': return { title: 'Registro Médico', subtitle: 'Únete a nuestra red de especialistas.' };
-      case 'pharmacy': return { title: 'Registro Farmacia', subtitle: 'Registra tu sucursal para vender productos.' };
-      case 'lab': return { title: 'Registro Laboratorio', subtitle: 'Ofrece tus servicios de análisis clínicos.' };
+      case 'medico': return { title: 'Registro Médico', subtitle: 'Únete a nuestra red de especialistas.' };
+      case 'farmacia': return { title: 'Registro Farmacia', subtitle: 'Registra tu sucursal para vender productos.' };
+      case 'laboratorio': return { title: 'Registro Laboratorio', subtitle: 'Ofrece tus servicios de análisis clínicos.' };
       case 'admin': return { title: 'Registro Administrador', subtitle: 'Acceso administrativo al sistema.' };
       default: return { title: 'Crear Cuenta', subtitle: 'Empieza a cuidar tu salud hoy mismo.' };
     }
@@ -54,24 +54,43 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
     setLoading(true);
 
     try {
-        const { data, error } = await supabase.auth.signUp({
+        // 1. Sign Up in Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.password,
             options: {
                 data: {
                     full_name: `${formData.name} ${formData.lastName}`.trim(),
-                    role: role,
-                    phone: formData.phone,
-                    ...(role === 'doctor' && { specialty: formData.specialty, license: formData.license }),
-                    ...(role === 'pharmacy' && { businessName: formData.businessName, address: formData.address }),
-                    ...(role === 'lab' && { businessName: formData.businessName, address: formData.address, examTypes: formData.examTypes })
                 }
             }
         });
 
-        if (error) throw error;
+        if (authError) throw authError;
         
-        console.log("Registered:", data);
+        if (authData.user) {
+          // 2. Create Profile in DB
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: authData.user.id,
+                email: formData.email,
+                full_name: `${formData.name} ${formData.lastName}`.trim() || formData.businessName,
+                role: role
+              }
+            ]);
+
+          if (profileError) throw profileError;
+
+          // 3. Create role-specific record if needed
+          if (role === 'medico') {
+            await supabase.from('doctors').insert([{
+              id: authData.user.id,
+              specialty: formData.specialty,
+            }]);
+          }
+        }
+
         onSubmit(role);
     } catch (error: any) {
         alert(error.message || "Error al registrarse");
@@ -83,6 +102,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
       try {
           setLoading(true);
+          // Save role to localStorage to retrieve it after redirect
+          localStorage.setItem('pending_role', role);
+          
           const { error } = await supabase.auth.signInWithOAuth({
               provider,
               options: {
@@ -96,6 +118,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
           setLoading(false);
       }
   };
+
 
   const updateField = (field: string, value: string) => {
       setFormData(prev => ({ ...prev, [field]: value }));

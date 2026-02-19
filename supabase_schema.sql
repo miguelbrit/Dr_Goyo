@@ -3,9 +3,11 @@
 -- 1. Perfiles de Usuario
 CREATE TABLE profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL,
   full_name TEXT,
-  role TEXT CHECK (role IN ('patient', 'doctor', 'pharmacy', 'lab', 'admin')),
+  role TEXT CHECK (role IN ('paciente', 'medico', 'farmacia', 'laboratorio', 'admin')),
   avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
