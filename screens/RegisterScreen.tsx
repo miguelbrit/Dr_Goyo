@@ -80,9 +80,21 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
     }
   };
 
-  const handleSocialLogin = (provider: 'google' | 'facebook' | 'apple') => {
-      console.log(`Iniciando registro con ${provider}`);
-      // Supabase logic: supabase.auth.signInWithOAuth({ provider })
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+      try {
+          setLoading(true);
+          const { error } = await supabase.auth.signInWithOAuth({
+              provider,
+              options: {
+                  redirectTo: window.location.origin
+              }
+          });
+          if (error) throw error;
+      } catch (error: any) {
+          alert(`Error con ${provider}: ` + error.message);
+      } finally {
+          setLoading(false);
+      }
   };
 
   const updateField = (field: string, value: string) => {
@@ -95,81 +107,86 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
       subtitle={config.subtitle}
       onBack={onBack}
     >
-      <div className="flex flex-col gap-6 py-2">
+      <div className="flex flex-col gap-6">
           {/* Social Register Options */}
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3">
               <button 
                   onClick={() => handleSocialLogin('google')}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-all font-medium text-gray-700 shadow-sm"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-100 rounded-2xl bg-white hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm disabled:opacity-50"
               >
                   <GoogleIcon />
-                  Continuar con Google
+                  <span className="text-sm">Continuar con Google</span>
               </button>
               
               <div className="grid grid-cols-2 gap-3">
                   <button 
                       onClick={() => handleSocialLogin('apple')}
-                      className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-all font-medium text-gray-700 shadow-sm"
+                      disabled={loading}
+                      className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-100 rounded-2xl bg-white hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm disabled:opacity-50"
                   >
                       <Apple size={18} />
-                      Apple
+                      <span className="text-sm">Apple</span>
                   </button>
                   <button 
                       onClick={() => handleSocialLogin('facebook')}
-                      className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] transition-all font-medium text-white shadow-sm"
+                      disabled={loading}
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#1877F2] hover:bg-[#166fe5] transition-all font-semibold text-white shadow-md shadow-blue-200/50 disabled:opacity-50"
                   >
-                      <Facebook size={18} fill="white" />
-                      Facebook
+                      <Facebook size={18} fill="currentColor" />
+                      <span className="text-sm">Facebook</span>
                   </button>
               </div>
           </div>
 
-          <div className="relative flex items-center justify-center">
-              <div className="border-t border-gray-200 w-full"></div>
-              <span className="bg-white px-4 text-xs text-gray-400 uppercase tracking-widest absolute">o regístrate con correo</span>
+          <div className="relative flex items-center justify-center py-2">
+              <div className="border-t border-gray-100 w-full"></div>
+              <span className="bg-white px-4 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] absolute">o vía email</span>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             
-            {/* Common Fields */}
-            <Input 
-              label="Correo Electrónico" 
-              type="email" 
-              placeholder="correo@ejemplo.com" 
-              icon={<Mail size={18} />} 
-              required 
-              value={formData.email}
-              onChange={(e) => updateField('email', e.target.value)}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Account Info */}
+            <div className="space-y-4">
               <Input 
-                label="Contraseña" 
-                type="password" 
-                placeholder="Min. 8 caracteres" 
-                icon={<Lock size={18} />} 
+                label="Correo Electrónico" 
+                type="email" 
+                placeholder="correo@ejemplo.com" 
+                icon={<Mail size={18} className="text-primary" />} 
                 required 
-                value={formData.password}
-                onChange={(e) => updateField('password', e.target.value)}
+                value={formData.email}
+                onChange={(e) => updateField('email', e.target.value)}
               />
-               <Input 
-                label="Teléfono" 
-                type="tel" 
-                placeholder="55 1234 5678" 
-                icon={<Phone size={18} />} 
-                required 
-                value={formData.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input 
+                  label="Contraseña" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  icon={<Lock size={18} className="text-primary" />} 
+                  required 
+                  value={formData.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                />
+                <Input 
+                  label="Teléfono" 
+                  type="tel" 
+                  placeholder="Teléfono" 
+                  icon={<Phone size={18} className="text-primary" />} 
+                  required 
+                  value={formData.phone}
+                  onChange={(e) => updateField('phone', e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Patient, Doctor & Admin Fields */}
+            {/* Personal Info */}
             {(role === 'patient' || role === 'doctor' || role === 'admin') && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <Input 
                     label="Nombre" 
                     placeholder="Tu nombre" 
-                    icon={<User size={18} />} 
+                    icon={<User size={18} className="text-primary" />} 
                     required 
                     value={formData.name}
                     onChange={(e) => updateField('name', e.target.value)}
@@ -184,86 +201,65 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
               </div>
             )}
 
-            {/* Doctor Specific Fields */}
+            {/* Professional/Business Info */}
             {role === 'doctor' && (
-              <>
+              <div className="space-y-4 pt-2">
                 <Input 
                   label="Especialidad" 
-                  placeholder="Ej. Cardiología, Pediatría" 
-                  icon={<Briefcase size={18} />} 
+                  placeholder="Ej. Cardiología" 
+                  icon={<Briefcase size={18} className="text-primary" />} 
                   required 
                   value={formData.specialty}
                   onChange={(e) => updateField('specialty', e.target.value)}
                 />
                 <Input 
                   label="Cédula Profesional" 
-                  placeholder="Número de registro médico" 
-                  icon={<FileText size={18} />} 
+                  placeholder="Número de cédula" 
+                  icon={<FileText size={18} className="text-primary" />} 
                   required 
                   value={formData.license}
                   onChange={(e) => updateField('license', e.target.value)}
                 />
-              </>
+              </div>
             )}
 
-            {/* Pharmacy Specific Fields */}
-            {role === 'pharmacy' && (
-              <>
+            {(role === 'pharmacy' || role === 'lab') && (
+              <div className="space-y-4 pt-2">
                 <Input 
-                  label="Nombre del Negocio" 
-                  placeholder="Ej. Farmacia Central" 
-                  icon={<Building size={18} />} 
+                  label={role === 'pharmacy' ? "Nombre de Farmacia" : "Nombre de Laboratorio"} 
+                  placeholder="Nombre comercial" 
+                  icon={<Building size={18} className="text-primary" />} 
                   required 
                   value={formData.businessName}
                   onChange={(e) => updateField('businessName', e.target.value)}
                 />
                 <Input 
-                  label="Dirección Completa" 
-                  placeholder="Calle, Número, Colonia, CP" 
-                  icon={<MapPin size={18} />} 
+                  label="Dirección" 
+                  placeholder="Ubicación completa" 
+                  icon={<MapPin size={18} className="text-primary" />} 
                   required 
                   value={formData.address}
                   onChange={(e) => updateField('address', e.target.value)}
                 />
-              </>
-            )}
-
-            {/* Lab Specific Fields */}
-            {role === 'lab' && (
-              <>
-                <Input 
-                  label="Nombre del Laboratorio" 
-                  placeholder="Ej. LabCare Diagnósticos" 
-                  icon={<Building size={18} />} 
-                  required 
-                  value={formData.businessName}
-                  onChange={(e) => updateField('businessName', e.target.value)}
-                />
-                <Input 
-                  label="Dirección Completa" 
-                  placeholder="Calle, Número, Colonia, CP" 
-                  icon={<MapPin size={18} />} 
-                  required 
-                  value={formData.address}
-                  onChange={(e) => updateField('address', e.target.value)}
-                />
-                <div className="w-full">
-                   <label className="block text-sm font-medium text-gray-700 mb-1.5 font-sans">
-                      Tipo de Exámenes
-                   </label>
-                   <input 
-                     className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-text focus:outline-none focus:ring-2 focus:ring-primary/50"
-                     placeholder="Sangre, Orina, Rayos X..."
-                     value={formData.examTypes}
-                     onChange={(e) => updateField('examTypes', e.target.value)}
-                   />
-                </div>
-              </>
+                {role === 'lab' && (
+                  <div className="w-full">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
+                        Tipo de Exámenes
+                    </label>
+                    <input 
+                      className="w-full px-4 py-3 rounded-2xl border border-gray-100 bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="Sangre, Rayos X, etc."
+                      value={formData.examTypes}
+                      onChange={(e) => updateField('examTypes', e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="pt-6">
               <Button 
-                label={loading ? "Creando cuenta..." : "Registrarse"} 
+                label={loading ? "Creando cuenta..." : "Crear Mi Cuenta"} 
                 variant="primary" 
                 fullWidth 
                 type="submit"
