@@ -50,7 +50,11 @@ ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_history ENABLE ROW LEVEL SECURITY;
 
--- Políticas básicas (Ejemplo: el usuario puede ver su propio perfil)
+-- Políticas básicas
 CREATE POLICY "Users can view own profiles" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profiles" ON profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profiles" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Everyone can view doctors" ON doctors FOR SELECT USING (true);
+CREATE POLICY "Doctors can update own records" ON doctors FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Doctors can insert own records" ON doctors FOR INSERT WITH CHECK (auth.uid() = id);

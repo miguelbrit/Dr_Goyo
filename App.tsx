@@ -113,13 +113,22 @@ const App: React.FC = () => {
 
   // Effect to handle automatic redirect when profile changes
   React.useEffect(() => {
-    if (!loading && user && profile) {
-      if (profile.role === 'medico') navigate('/dashboard/medico');
-      else if (profile.role === 'farmacia') navigate('/dashboard/farmacia');
-      else if (profile.role === 'laboratorio') navigate('/dashboard/laboratorio');
-      else if (profile.role === 'paciente') navigate('/dashboard/paciente');
+    if (!loading && user) {
+      if (profile) {
+        if (profile.role === 'medico') navigate('/dashboard/medico');
+        else if (profile.role === 'farmacia') navigate('/dashboard/farmacia');
+        else if (profile.role === 'laboratorio') navigate('/dashboard/laboratorio');
+        else if (profile.role === 'paciente') navigate('/dashboard/paciente');
+      } else {
+        // Logged in but no profile found - force role selection
+        // Only if not already on role-selection or register or welcome
+        const publicPaths = ['/welcome', '/role-selection', '/register', '/login'];
+        if (!publicPaths.includes(window.location.pathname)) {
+          navigate('/role-selection');
+        }
+      }
     }
-  }, [user, profile, loading]);
+  }, [user, profile, loading, navigate]);
 
   // --- Auth Handlers ---
   const handleLoginSuccess = () => {

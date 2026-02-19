@@ -204,7 +204,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
             </div>
 
             {/* Personal Info */}
-            {(role === 'patient' || role === 'doctor' || role === 'admin') && (
+            {(role === 'paciente' || role === 'medico' || role === 'admin') && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <Input 
                     label="Nombre" 
@@ -225,7 +225,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
             )}
 
             {/* Professional/Business Info */}
-            {role === 'doctor' && (
+            {role === 'medico' && (
               <div className="space-y-4 pt-2">
                 <Input 
                   label="Especialidad" 
@@ -246,7 +246,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ role, onBack, on
               </div>
             )}
 
-            {(role === 'pharmacy' || role === 'lab') && (
+            {(role === 'farmacia' || role === 'laboratorio') && (
               <div className="space-y-4 pt-2">
                 <Input 
                   label={role === 'pharmacy' ? "Nombre de Farmacia" : "Nombre de Laboratorio"} 
